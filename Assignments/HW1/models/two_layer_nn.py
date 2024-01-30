@@ -63,6 +63,14 @@ class TwoLayerNet(_baseNetwork):
         #       outputs                                                             #
         #############################################################################
 
+        z1 = np.matmul(X, self.weights['W1']) + self.weights['b1']
+        sig = _baseNetwork.sigmoid(_baseNetwork, z1)
+        z2 = np.matmul(sig, self.weights['W2']) + self.weights['b2']
+        scores = _baseNetwork.softmax(_baseNetwork, z2)
+
+        loss = _baseNetwork.cross_entropy_loss(_baseNetwork, scores, y)
+        accuracy = _baseNetwork(_baseNetwork, scores)
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################

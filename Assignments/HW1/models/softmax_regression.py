@@ -48,11 +48,12 @@ class SoftmaxRegression(_baseNetwork):
         # # print('KEYS', self.weights.keys())
         # # print('SHAPE OF W', self.weights['W1'].shape)
         # # print('X: ', X.shape)
+        # # print('Y:', y)
         
         linear_layer = np.dot(X, self.weights['W1']) # shape: N,784 x 784,10 = N, num_classes
         # # print('CHECK SHAPE OF DOT PRODUCT:', linear_layer.shape)
         relu = _baseNetwork.ReLU(_baseNetwork, linear_layer)    # shape: N, num_classes
-        # # print('SHAPE OF ReLU:', relu.shape)
+        # # print('SHAPE OF ReLU:', relu.shape) 
         softmax = _baseNetwork.softmax(_baseNetwork, relu)  # shape: N, num_classes
         # # print('SHAPE OF softmax:', softmax.shape)
         loss = _baseNetwork.cross_entropy_loss(_baseNetwork, softmax, y)    # shape: N, num_classes
@@ -72,26 +73,33 @@ class SoftmaxRegression(_baseNetwork):
         #        2) Store the gradients in self.gradients                           #
         #############################################################################
         
+        # From class: matmul order matters! Need to go from last-most to first layers
+
         # From Gradient notes (in L6's slides): dL/dW = < dL/dOut , dOut/dW > (typo in there)
         # In this case: dL/dW = dL/dSoftmax @ dSoftmax/dRelu @ dRelu/dLinear @ dLinear/dW
-        # N, x N,10 x N,10 x N,784
+        # N,10 x N,10 x N,10 x N,784
 
-        grad_linear_x = self.weights
+        # # grad_linear_x = self.weights
         grad_linear_w = X
-        # grad_softmax = softmax - loss   # Has to be the chosen label --> should it be softmax - y?
-        grad_L = np.max(softmax, axis=1) - loss   # chosen label - y
-        grad_softmax = relu # effectively it's the scores before being transformed into probabilities
-        grad_relu = _baseNetwork.ReLU_dev(_baseNetwork, linear_layer)
+        # # print('GRAD_Linear', grad_linear_w.shape)
+        
+        # # grad_L = np.argmax(softmax, axis=1) - loss   # chosen label - y
+        # # grad_softmax = relu # effectively it's the scores before being transformed into probabilities
+
+        # From HW1 Tutorial and link provided (https://towardsdatascience.com/derivative-of-the-softmax-function-and-the-categorical-cross-entropy-loss-ffceefc081d1)
+        grad_L = (softmax - loss)   # shape: N, num_classes ---> Unsure if should thake the "average" (i.e., divide by N)
+        # # print('GRAD_L', grad_L.shape)
+        
+        grad_relu = _baseNetwork.ReLU_dev(_baseNetwork, linear_layer)   # shape: N, num_classes
         # # print('grad ReLU:', np.shape(grad_relu))
 
-        # Matmul order matters! Need to go from last-most to first layers
-        # N, x N,10 x N,784
+        # From HW1 Tutorial: dL/dW = dL/dRelu * dRelu/dLinear * dLinear/dW ---> N,10 * N,10 x N,784
+        # Trick to not need to compute deriv. of softmax:
+        grad_L_linear = grad_L * grad_relu
+        # # print('Shape dLoss/dLinear:', grad_L_linear.shape)
 
-        # gradient = np.dot(np.dot(grad_L, grad_relu), grad_linear_w.T)
-        # print(np.dot(grad_relu.T, grad_L).shape)
-        gradient = grad_relu.T @ grad_linear_w.T
-        print(gradient.shape)
-        # @ grad_linear_wS
+        gradient = np.matmul(grad_linear_w.T, grad_L_linear)
+        # # print('Gradient shape:', gradient.shape)
 
         self.gradients['W1'] = gradient
 
