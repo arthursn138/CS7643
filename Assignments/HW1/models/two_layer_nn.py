@@ -63,13 +63,13 @@ class TwoLayerNet(_baseNetwork):
         #       outputs                                                             #
         #############################################################################
 
-        z1 = np.matmul(X, self.weights['W1']) + self.weights['b1']
-        sig = _baseNetwork.sigmoid(_baseNetwork, z1)
-        z2 = np.matmul(sig, self.weights['W2']) + self.weights['b2']
-        scores = _baseNetwork.softmax(_baseNetwork, z2)
+        z1 = np.matmul(X, self.weights['W1']) + self.weights['b1']      # Shape: N, hidden_size
+        sig = _baseNetwork.sigmoid(_baseNetwork, z1)                    # Shape: N, hidden_size
+        z2 = np.matmul(sig, self.weights['W2']) + self.weights['b2']    # Shape: N, num_classes
+        scores = _baseNetwork.softmax(_baseNetwork, z2)                 # Shape: N, num_classes
 
         loss = _baseNetwork.cross_entropy_loss(_baseNetwork, scores, y)
-        accuracy = _baseNetwork(_baseNetwork, scores)
+        accuracy = _baseNetwork.compute_accuracy(_baseNetwork, scores, y)
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -85,6 +85,36 @@ class TwoLayerNet(_baseNetwork):
         #          You may also want to implement the analytical derivative of      #
         #          the sigmoid function in self.sigmoid_dev first                   #
         #############################################################################
+        
+        grad_CEL_softmax = (scores - loss) / len(y)     # Shape: N, num_classes ---> Unsure if should thake the "average" (i.e., divide by N)
+        grad_L2_w2 = np.matmul(sig.T, grad_CEL_softmax) # Shape: (hidden, N x N, num_classes) = hidden_size, num_classes
+        grad_CEL_b2 = np.matmul(np.ones(np.shape(X)[0]),
+                                grad_CEL_softmax)       # Shape: (num_classes,)
+        # print('Hidden size:', self.hidden_size)
+        # print(grad_CEL_b2.shape)
+        # print('input size:', self.input_size)
+        # print('num classes', self.num_classes)
+
+        self.gradients['W2'] = grad_L2_w2
+        self.gradients['b2'] = grad_CEL_b2
+
+        grad_L2_sig = self.weights['W2']        # Shape: hidden_size, num_classes
+        grad_sig_L1 = _baseNetwork.sigmoid_dev(_baseNetwork, z1)    # Shape: N, hidden_size
+        grad_L1_w1 = X.T                        # Shape: input_size, N
+        grad_L1_b1 = np.ones(np.shape(X)[0])    # Shape: (N,)
+
+        # # # grad_sig_w1 = np.matmul(grad_L1_w1, grad_sig_L1)            # Shape: input_size, hidden_size
+        grad_CEL_sig = np.matmul(grad_CEL_softmax, grad_L2_sig.T)   # Shape: N, hidden_size
+        grad_sig_b1 = np.matmul(grad_L1_b1, grad_sig_L1)            # Shape: (hidden_size,)
+
+        # # Check sizes:
+        # print(f'grad_L1_w1:{grad_L1_w1.shape}; grad_sig_L1:{grad_sig_L1.shape} -> grad_sig_w1:{grad_sig_w1.shape}')
+        # print(f'grad_CEL_softmax:{grad_CEL_softmax.shape}; grad_L2_sig.T:{grad_L2_sig.T.shape} -> grad_CEL_sig:{grad_CEL_sig.shape}')
+        # print(f'grad_L1_b1:{grad_L1_b1.shape}; grad_sig_L1:{grad_sig_L1.shape} -> grad_sig_b1:{grad_sig_b1.shape}')
+        # print(f'grad_CEL_sig:{grad_CEL_sig.shape}; grad_sig_b1:{grad_sig_b1.shape}')
+
+        self.gradients['W1'] = np.matmul(grad_L1_w1, grad_CEL_sig * grad_sig_L1)    # Shape: input_size, hidden_size
+        self.gradients['b1'] = np.matmul(grad_CEL_sig, grad_sig_b1)                 # Shape: (hidden_size,)
         
         #############################################################################
         #                              END OF YOUR CODE                             #

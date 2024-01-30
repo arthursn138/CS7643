@@ -54,6 +54,7 @@ class _baseNetwork:
         #    1) Implement Cross-Entropy Loss                                        #
         #############################################################################
         
+        # From class notes
         # y are the indices of the classes -> get the value on x_pred associated with that index
         pred_probs = []
         for i in range(len(y)):
@@ -80,6 +81,7 @@ class _baseNetwork:
         #    1) Implement the accuracy function                                     #
         #############################################################################
         
+        # https://en.wikipedia.org/wiki/Accuracy_and_precision
         pred_classes = np.argmax(x_pred, axis=1)
         trues = np.where(pred_classes == y, 1, 0)
         # print(trues)
@@ -103,6 +105,7 @@ class _baseNetwork:
         # TODO: Comput the sigmoid activation on the input                          #
         #############################################################################
         
+        # From class notes
         out = 1 / (1 + np.exp(-X))
 
         #############################################################################
@@ -123,7 +126,7 @@ class _baseNetwork:
         #############################################################################
         
         # https://math.stackexchange.com/questions/78575/derivative-of-sigmoid-function-sigma-x-frac11e-x
-        ds = self.sigmoid(x) * (1 - self.sigmoid(x))
+        ds = self.sigmoid(self, X=x) * (1 - self.sigmoid(self, X=x))
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -143,6 +146,7 @@ class _baseNetwork:
         # TODO: Comput the ReLU activation on the input                          #
         #############################################################################
         
+        # From class notes
         # out = np.zeros_like(X)
         # for i in X:
             # print(i)
@@ -168,6 +172,7 @@ class _baseNetwork:
         # TODO: Comput the gradient of ReLU activation                              #
         #############################################################################
         
+        # From class notes
         # out = np.zeros_like(X)
         # for i in X:
         #     out[i] = 1 if i > 0 else 0

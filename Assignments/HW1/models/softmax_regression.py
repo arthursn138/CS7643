@@ -58,7 +58,7 @@ class SoftmaxRegression(_baseNetwork):
         # # print('SHAPE OF softmax:', softmax.shape)
         loss = _baseNetwork.cross_entropy_loss(_baseNetwork, softmax, y)    # shape: N, num_classes
         # # print('LOSS SHAPE:', loss.shape, 'VALUE:', loss)
-        accuracy = _baseNetwork(_baseNetwork, softmax)
+        accuracy = _baseNetwork.compute_accuracy(_baseNetwork, softmax, y)
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -87,7 +87,7 @@ class SoftmaxRegression(_baseNetwork):
         # # grad_softmax = relu # effectively it's the scores before being transformed into probabilities
 
         # From HW1 Tutorial and link provided (https://towardsdatascience.com/derivative-of-the-softmax-function-and-the-categorical-cross-entropy-loss-ffceefc081d1)
-        grad_L = (softmax - loss)   # shape: N, num_classes ---> Unsure if should thake the "average" (i.e., divide by N)
+        grad_L = (softmax - loss) / len(y)   # shape: N, num_classes ---> Unsure if should thake the "average" (i.e., divide by N)
         # # print('GRAD_L', grad_L.shape)
         
         grad_relu = _baseNetwork.ReLU_dev(_baseNetwork, linear_layer)   # shape: N, num_classes
