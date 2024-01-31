@@ -17,6 +17,18 @@ class SGD(_BaseOptimizer):
         #    1) Update model weights based on the learning rate and gradients       #
         #############################################################################
         
+        # There's actually no stochastic term, so it's vanilla gradient descent
+
+        # NOTE: model is already regularized (line 14)
+
+        theta = model.weights
+        grad_theta = model.gradients
+        weights_keys = model.weights.keys()
+
+        # Do that for every single weight
+        for key in weights_keys:
+            theta[key] = theta[key] - self.learning_rate * grad_theta[key]
+        
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################

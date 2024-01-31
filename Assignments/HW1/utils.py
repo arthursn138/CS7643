@@ -130,8 +130,8 @@ def generate_batched_data(data, label, batch_size=32, shuffle=False, seed=None):
 
     idx = 0
     for i in range(int(num_of_batches)):
-        batched_data.append(data[idx:idx + batch_size])
-        batched_label.append(label[idx:idx + batch_size])
+        batched_data.append(np.array(data[idx:idx + batch_size]))
+        batched_label.append(np.array(label[idx:idx + batch_size]))
         idx += batch_size    
 
 
