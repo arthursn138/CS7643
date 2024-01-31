@@ -126,7 +126,7 @@ class _baseNetwork:
         #############################################################################
         
         # https://math.stackexchange.com/questions/78575/derivative-of-sigmoid-function-sigma-x-frac11e-x
-        ds = self.sigmoid(self, X=x) * (1 - self.sigmoid(self, X=x))
+        ds = _baseNetwork.sigmoid(self, x) * (1 - _baseNetwork.sigmoid(self, x))
 
         #############################################################################
         #                              END OF YOUR CODE                             #
