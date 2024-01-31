@@ -19,18 +19,18 @@ class _BaseOptimizer:
         #       coefficient                                                         #
         #############################################################################
         
-        theta = model.weights
-        weights_keys = theta.keys()
+        grad_theta = model.gradients
+        gradients_keys = grad_theta.keys()
         # print(weights_keys)
         
-        theta['W1'] = theta['W1'] * self.reg
+        grad_theta['W1'] = grad_theta['W1'] * self.reg
 
         # DON'T regularize biases weights
         # ** Key assumption: only testing in softmax_relu and two_layer_nn AND/OR naming conventions are thye same**
         # If I get Gradescope errors, come back here and make it generalizable: test the sizes of matrices and skip the 1D ones
 
-        if 'W2' in weights_keys:
-            theta['W2'] = theta['W2'] * self.reg
+        if 'W2' in gradients_keys:
+            grad_theta['W2'] = grad_theta['W2'] * self.reg
 
 
         #############################################################################
