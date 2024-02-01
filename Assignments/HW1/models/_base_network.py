@@ -81,11 +81,13 @@ class _baseNetwork:
         #    1) Implement the accuracy function                                     #
         #############################################################################
         
-        # https://en.wikipedia.org/wiki/Accuracy_and_precision
+        # https://en.wikipedia.org/wiki/Accuracy_and_precision -- binary case
+        # https://stats.stackexchange.com/questions/306742/how-to-compute-accuracy-for-multi-class-classification-problem-and-how-is-accura -- multiclass case
         pred_classes = np.argmax(x_pred, axis=1)
         trues = np.where(pred_classes == y, 1, 0)
         # print(trues)
-        acc = np.sum(trues) / np.sum(x_pred)
+
+        acc = np.sum(trues) / len(y) # np.sum(x_pred)
 
         #############################################################################
         #                              END OF YOUR CODE                             #
