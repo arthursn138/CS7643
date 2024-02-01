@@ -29,14 +29,7 @@ class SGD(_BaseOptimizer):
         for key in weights_keys:
             # print(key)
             theta[key] -= self.learning_rate * grad_theta[key]
-            # model.weights[key] -= self.learning_rate * model.gradients[key]
         
-        # # theta['W1'] -= self.learning_rate * grad_theta['W1']
-
-        # # if 'W2' in weights_keys:
-        # #     theta['W2'] -= self.learning_rate * grad_theta['W2']
-        # #     theta['b1'] -= self.learning_rate * grad_theta['b1']
-        # #     theta['b2'] -= self.learning_rate * grad_theta['b2']
 
         #############################################################################
         #                              END OF YOUR CODE                             #
