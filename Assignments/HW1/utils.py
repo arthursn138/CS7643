@@ -229,6 +229,30 @@ def plot_curves(train_loss_history, train_acc_history, valid_loss_history, valid
     #    1) Plot learning curves of training and validation loss                #
     #    2) Plot learning curves of training and validation accuracy            #
     #############################################################################
+    # print(train_loss_history)
+    # print(train_acc_history)
+    # print(valid_loss_history)
+    # print(valid_acc_history)
+
+    # Assumption: as everything are scalars gotten at the end of an epoch, the size is the same for all (epochs,)
+
+    x = np.arange(len(train_loss_history))
+
+    _, ax = plt.subplots(figsize=(8, 8))
+    ax.plot(x, train_loss_history, label='Train')
+    ax.plot(x, valid_acc_history, label='Validation')
+    ax.set_title('Loss Curve')
+    ax.set_xlabel('Loss')
+    ax.set_ylabel('Epochs')
+    ax.legend()
+    
+    _, ax0 = plt.subplots(figsize=(8, 8))
+    ax0.plot(x, train_acc_history, label='Train')
+    ax0.plot(x, valid_acc_history, label='Validation')
+    ax0.set_title('Accuracy Curve')
+    ax0.set_xlabel('Accuracy')
+    ax0.set_ylabel('Epochs')
+    ax0.legend()
 
     #############################################################################
     #                              END OF YOUR CODE                             #
