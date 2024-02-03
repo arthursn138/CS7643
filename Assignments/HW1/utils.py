@@ -242,16 +242,18 @@ def plot_curves(train_loss_history, train_acc_history, valid_loss_history, valid
     ax.plot(x, train_loss_history, label='Train')
     ax.plot(x, valid_acc_history, label='Validation')
     ax.set_title('Loss Curve')
-    ax.set_xlabel('Loss')
-    ax.set_ylabel('Epochs')
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Loss')
+    ax.set_ylim(0, 3)
     ax.legend()
     
     _, ax0 = plt.subplots(figsize=(8, 8))
     ax0.plot(x, train_acc_history, label='Train')
     ax0.plot(x, valid_acc_history, label='Validation')
     ax0.set_title('Accuracy Curve')
-    ax0.set_xlabel('Accuracy')
-    ax0.set_ylabel('Epochs')
+    ax0.set_xlabel('Epochs')
+    ax0.set_ylabel('Accuracy')
+    ax0.set_ylim(0, 1)
     ax0.legend()
 
     #############################################################################
