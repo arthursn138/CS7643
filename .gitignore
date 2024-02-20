@@ -1,6 +1,7 @@
 *.csv
 *.pyc
 /Caos/*
+/Caótico/*
 
 /Assignments/HW2-Coding/student_version/part1-convnet/data/cifar*
 /Assignments/HW2-Coding/student_version/part2-pytorch/data/cifar*
