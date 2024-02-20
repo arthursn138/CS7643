@@ -10,11 +10,7 @@ class MyModel(nn.Module):
         # TODO: Initialize the network weights                                      #
         #############################################################################
         
-        self.input_size = input_size
-        self.output_size = input_size
-        self.fc1 = torch.nn.Linear(self.input_size, hidden_size)
-        self.sigmoid = torch.nn.Sigmoid()
-        self.fc2 = torch.nn.Linear(hidden_size, self.output_size)
+        
         
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -26,11 +22,7 @@ class MyModel(nn.Module):
         # TODO: Implement forward pass of the network                               #
         #############################################################################
 
-        hidden1 = self.fc1(x)
-        sigmoid = self.sigmoid(hidden1)
-        hidden2 = self.fc2(sigmoid)
-
-        outs = hidden2
+        
         
         #############################################################################
         #                              END OF YOUR CODE                             #

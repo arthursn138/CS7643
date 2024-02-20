@@ -35,6 +35,12 @@ class Linear:
         #    HINT: You may want to flatten the input first                          #
         #############################################################################
         
+        # print(x.shape) # total data, ch, height, widht
+        # print(self.in_dim)
+        n, *_ = x.shape
+        x_flat = x.reshape(n, -1)
+        out = np.matmul(x_flat, self.weight) + self.bias
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -52,6 +58,14 @@ class Linear:
         # TODO: Implement the linear backward pass.                                 #
         #############################################################################
         
+        # print(x.shape)
+        n, h, w = x.shape
+        self.dx = np.matmul(dout, self.weight.T).reshape(n, h, w)  # grad loss wrt inputs/previous layer
+        x_flat = x.reshape(n, -1)
+        # print(x.shape, x_flat.shape, n*m)
+        self.dw = np.matmul(x_flat.T, dout) # grad loss wrt weights (W)
+        self.db = np.sum(dout, axis=0)      # grad loss wrt weights (b)
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
