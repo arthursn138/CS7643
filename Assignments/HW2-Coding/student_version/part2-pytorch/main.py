@@ -71,6 +71,21 @@ def train(epoch, data_loader, model, optimizer, criterion):
         #       3. Compute gradients and update model parameters                    #
         #############################################################################
         
+        # Zeros the gradients
+        optimizer.zero_grad()
+        
+        # Forward pass
+        out = model.forward(data)
+        
+        # Compute the loss
+        loss = criterion(out, target)
+
+        # Backprop the loss
+        loss.backward()
+
+        # Update according to optimizer we're using
+        optimizer.step()
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -107,6 +122,14 @@ def validate(epoch, val_loader, model, criterion):
         # TODO: Complete the body of training loop                                  #
         #       HINT: torch.no_grad()                                               #
         #############################################################################
+        
+        # https://pytorch.org/docs/stable/generated/torch.no_grad.html
+        with torch.no_grad():
+            # Pure forward pass
+            out = model(data)
+
+            # Calculate the loss without backpropping or optimizing
+            loss = criterion(out, target).item()
         
         #############################################################################
         #                              END OF YOUR CODE                             #
