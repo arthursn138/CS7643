@@ -71,19 +71,19 @@ def train(epoch, data_loader, model, optimizer, criterion):
         #       3. Compute gradients and update model parameters                    #
         #############################################################################
         
-        # Zeros the gradients
+        # Zeroes the gradients (before 1)
         optimizer.zero_grad()
         
-        # Forward pass
+        # Forward pass (1)
         out = model.forward(data)
         
-        # Compute the loss
+        # Compute the loss (2)
         loss = criterion(out, target)
 
-        # Backprop the loss
+        # Backprop the loss (3)
         loss.backward()
 
-        # Update according to optimizer we're using
+        # Update according to optimizer we're using (also 3)
         optimizer.step()
 
         #############################################################################

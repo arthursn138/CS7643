@@ -29,6 +29,7 @@ class TwoLayerNet(nn.Module):
         # TODO: Implement forward pass of the network                               #
         #############################################################################
         
+        x = torch.reshape(x, (x.size()[0], -1))
         hidden1 = self.fc1(x)           # 1st activation
         sigmoid = self.sigmoid(hidden1) # Sigmoid (2nd) activation
         hidden2 = self.fc2(sigmoid)     # 2nd layer (3rd) activation = scores
