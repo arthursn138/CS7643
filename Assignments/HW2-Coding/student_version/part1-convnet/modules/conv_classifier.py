@@ -55,6 +55,15 @@ class ConvNet:
         #    1) Implement forward pass of the model                                 #
         #############################################################################
         
+        # # print(self.modules)
+        input = x   # First input has to be the actual data x
+        for i in self.modules:
+            # print('This is an element in "slef.modules":', i)
+            out_hidden = i.forward(input)   # Passes last output as input to the current layer
+            input = out_hidden              # Current output becomes input to the next
+
+        probs, loss = self.criterion.forward(input, y)  # Simple fwd pass in the function defined in softmax_ce.py
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -70,6 +79,24 @@ class ConvNet:
         #    1) Implement backward pass of the model                                #
         #############################################################################
         
+        # Go each step back at a time (contrary of above)
+        self.criterion.backward()       # Takes no argument, has dx
+        last_out = self.criterion.dx    # Gets what is going to be fed to the previous layers ("upstream" gradients)
+
+        for i in reversed(self.modules): #.reverse(): (doesn't work)
+            # # print(i)
+            i.backward(last_out)    # All have dx, some have db and dw. Doing a back pass satisfies updating those grads
+            last_out = i.dx         # Gradients were updated above, dx is the appropriate input to the previous layer
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
+
+# # # # # # ## TO TEST:
+# # # # # # import numpy as np
+
+# # # # # # x = np.array((1,2,3),(1,3,4),(1,2,3))
+# # # # # # y = np.array(0, 1, 2)
+
+# # # # # # net = ConvNet()
+# # # # # # net.forward(x, y)

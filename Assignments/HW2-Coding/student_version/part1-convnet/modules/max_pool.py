@@ -104,20 +104,47 @@ class MaxPooling:
         dx = np.zeros_like(x)
         for i in range(W_out):
             for j in range(H_out):
-                # Get corners
-                k_w_0 = i * self.stride
-                k_h_0 = j * self.stride
-                k_w_end = k_w_0 + self.kernel_size
-                k_h_end = k_h_0 + self.kernel_size
+                # # Get corners
+                # k_w_0 = i * self.stride
+                # k_h_0 = j * self.stride
+                # k_w_end = k_w_0 + self.kernel_size
+                # k_h_end = k_h_0 + self.kernel_size
 
                 # # Pooling operation:
                 # x_from_pool = x[:, :, k_h_0:k_h_end, k_w_0:k_w_end] # Window with all pixels that touched the one the grad is taken w.r.t.
                 # max_idx = np.argmax(x_from_pool)
-                # idx_h, idx_w = np.unravel_index(max_idx, (self.kernel_size, self.kernel_size))
+                # # max_value = np.max(x_from_pool)
+                # # print('max_indices', max_idx)
 
-                # Accumulates grads (Lec 10)
-                # # dx[:, :, j + idx_h, i + idx_w] = dout[:, :, j:(j + 1), i:(i + 1)]
-                dx[:, :, k_h_0:k_h_end, k_w_0:k_w_end] += dout[:, :, j:(j + 1), i:(i + 1)] #* x[j, i]
+                # # Get indices affected by this window
+                # # idx_h, idx_w = np.unravel_index(max_idx, (self.kernel_size, self.kernel_size))
+                # idx_w = max_idx % self.kernel_size
+                # idx_h = int(max_idx / self.kernel_size)
+                
+                # # Accumulates grads (Lec 10)
+                # # dx[:, :, k_h_0 + idx_h, k_w_0 + idx_w] += dout[:, :, j, i] # -- Why isn't it working?????
+                # # # dx[:, :, k_h_0:k_h_end, k_w_0:k_w_end] += dout[:, :, j:(j + 1), i:(i + 1)] * max_value
+                # # # dx[:, :, j, i] += dout[:, :, j:(j + 1), i:(i + 1)] * max_value
+                # # # dx[:, :, j, i] += dout[:, :, j, i] * max_value
+                # # # dx[:, :, int(j/self.stride), i%self.stride] = max_value
+
+                # COULDN'T BROADCAST BATCH AND CHANNEL, BUT HERE ARE THE SAME OPPERATIONS:
+
+                for nn in range(n):
+                    for k in range(ch):
+                        # Get corners
+                        k_w_0 = i * self.stride
+                        k_h_0 = j * self.stride
+                        k_w_end = k_w_0 + self.kernel_size
+                        k_h_end = k_h_0 + self.kernel_size
+                        # Pooling operation:
+                        x_from_pool = x[nn, k, k_h_0:k_h_end, k_w_0:k_w_end] # Window with all pixels that touched the one the grad is taken w.r.t.
+                        max_idx = np.argmax(x_from_pool)
+                        # Get indices affected by this window
+                        idx_w = max_idx % self.kernel_size
+                        idx_h = int(max_idx / self.kernel_size)
+                        
+                        dx[nn, k, k_h_0 + idx_h, k_w_0 + idx_w] += dout[nn, k, j, i]
 
         self.dx = dx
 

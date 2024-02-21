@@ -59,9 +59,14 @@ class Linear:
         #############################################################################
         
         # print(x.shape)
-        n, h, w = x.shape
-        self.dx = np.matmul(dout, self.weight.T).reshape(n, h, w)  # grad loss wrt inputs/previous layer
-        x_flat = x.reshape(n, -1)
+        # n, h, w = x.shape # DOESN'T WORK GOOD WITH MONO AND NON MONO CHROMATIC
+        # # print(np.shape(x.shape))
+        # n = x.shape[0]
+        # h = x.shape[-2]
+        # w = x.shape[-1]
+        shape_tuple = x.shape   # much cleaner
+        self.dx = np.matmul(dout, self.weight.T).reshape(shape_tuple)  # grad loss wrt inputs/previous layer
+        x_flat = x.reshape(x.shape[0], -1)
         # print(x.shape, x_flat.shape, n*m)
         self.dw = np.matmul(x_flat.T, dout) # grad loss wrt weights (W)
         self.db = np.sum(dout, axis=0)      # grad loss wrt weights (b)
