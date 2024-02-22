@@ -1,7 +1,7 @@
 Train:
-  batch_size: 128
-  learning_rate: 0.005
-  reg: 0.0005
+  batch_size: 64          # 64 (old 128)
+  learning_rate: 0.005    # 0.005 (old 0.0001)
+  reg: 0.0005             # 0.0005
   epochs: 10
   steps: [6, 8]
   warmup: 0

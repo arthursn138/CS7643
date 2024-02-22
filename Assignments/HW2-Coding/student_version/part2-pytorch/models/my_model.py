@@ -32,6 +32,7 @@ class MyModel(nn.Module):
         self.conv3 = nn.Conv2d(16, 3, 3, 1, 0)
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(self.kernel_size_pool, self.stride_pool)
+        self.softplus = nn.Softplus()
 
         # http://layer-calc.com/ with CIFAR-10 (32x32), above conv2d and maxpool2d: (32, 13, 13)
         # self.maxpool_out_size = 5408
@@ -64,10 +65,10 @@ class MyModel(nn.Module):
         # out3 = self.relu(self.conv2(pool_out))  # Conv 3ch out + relu activation ()
         # out4 = self.relu(self.conv2(out3))      # Conv 3ch out + relu activation ()
         
-        hidden1 = self.relu(self.fc1(torch.flatten(pool_out, 1)))
-        hidden2 = self.relu(self.fc2(hidden1))
-        hidden3 = self.relu(self.fc3(hidden2))
-        outs = self.relu(self.fc4(hidden2))
+        hidden1 = self.relu(self.fc1(torch.flatten(pool_out, 1))) # only "necessary" relu
+        hidden2 = self.softplus(self.fc2(hidden1)) # this softplus didn't hurt
+        hidden3 = self.fc3(hidden2)
+        outs = self.fc4(hidden3)
         
         #############################################################################
         #                              END OF YOUR CODE                             #
