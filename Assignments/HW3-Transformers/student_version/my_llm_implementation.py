@@ -39,11 +39,42 @@ class Embedding(DummyEmbedding):
         #                                                                           #
         # This will take a few lines.                                               #
         #############################################################################
-        a = self.vocab_embeddings()
+
+        # print(idx, idx.size())
+        # # print(B)
+        # # print(T)
+
+        # # n_embeddings = 3    # From BERT paper
+
+        ## From Piazza: idx = word indices; vocab_emb = embeddings for the words;
+        # pos_emb = embeddings for relative positions
+
+        emb_v = self.vocab_embeddings(idx)
+        # emb_p = self.position_embeddings(idx[B])
+        # print(emb_v.size())
+
+        emb_p = torch.zeros_like(emb_v)
+        # print('idx', idx.squeeze().tolist())
+        # list_of_indices = idx.squeeze().tolist()
+        # for i in list_of_indices:
+        for i, word_index in enumerate(idx.squeeze()):
+            # print(i, word_index)
+            ii = torch.tensor(i)
+            # print('ii', ii)
+            emb_p[:, i, :] = self.position_embeddings(ii)
+            # print('i=', i, '; emb_p=', emb_p[:, i, :])
+
+        # print(emb_v)
+        # print(emb_p)
+
+        embeddings = emb_v + emb_p
+        # print(embeddings)
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
         return embeddings
+
 
 #Do not change, it will break the AutoGrader
 embedding_def = In[-1]
