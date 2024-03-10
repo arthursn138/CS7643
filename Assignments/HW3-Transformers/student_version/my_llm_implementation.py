@@ -104,7 +104,64 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
         # then you should manually set the attention from token i to j to be -inf   #
         # Hint: See torch.masked_fill                                               #
         #############################################################################
-        print(x, x.size())
+        # print(x, x.size())
+
+        ### From Piazza:
+        ## Don't iterate over n_heads (single matmul should do the job)
+        ## Should compute the layer norm **after each transformer layer** when iterating over them, rather than only after the final layer.
+
+        k = self.k(x)
+        q = self.q(x)
+        v = self.v(x)
+
+        # print('K:', k.size())   # D_X, D_Q
+        # print('Q:', q.size())   # D_X, D_Q
+        # print('V:', v.size())   # D_X, D_V
+        # # print('Shape K', k.shape)
+
+        ## Multihead part: "splitting" matrices into different heads (following https://jalammar.github.io/illustrated-gpt2/#part-2-illustrated-self-attention)
+        # print('Number of heads =', self.n_head)
+        k = k.reshape(self.n_head, T, -1)   # H, Dx, Dq (slide notation)
+        q = q.reshape(self.n_head, T, -1)   # H, Dx, Dq (slide notation)
+        v = v.reshape(self.n_head, T, -1)   # H, Dx, Dv (slide notation)
+        # IF IT BREAKS ON OTHER MODULES, TRY USING self.n_embd / self.n_head ON IDX 1, OR -1 ON IDX 1 AND self.n_embd / self.n_head ON IDX 2
+
+        # # # print('Embedding dim:', C)
+        # # # k.reshape(C, C, -1)
+
+        # print('K:', k.size())   # H, Dx, Dq (slide notation)
+        # print('Q:', q.size())   # H, Dx, Dq (slide notation)
+        # print('V:', v.size())   # H, Dx, Dv (slide notation)
+
+        similarities = torch.bmm(q, torch.transpose(k, 1, 2)) / torch.sqrt(torch.tensor(k.size()[2])) # Normalized by Dq (slides notation)
+        # print(similarities) # IF DOESN'T WORK, TRY TORCH.BMM<>TORCH.MATMUL
+        # # mask = torch.where(attention_mask == 0, -float('inf'), attention_mask)
+        # # similarities = similarities * mask
+
+        self.softmax = nn.Softmax(dim=2)
+        softmax = self.softmax(similarities)
+        # print(softmax)
+        first_dropout = self.attn_dropout(softmax)
+        # print(first_dropout)
+
+        att = torch.bmm(first_dropout, v)
+        # # # print('Before summing', att)
+        # # # print(att.shape)
+        # # # summed = torch.sum(att, dim=1)
+        # # # print('Checking if summed over the correct dimension', summed)
+
+        ## Concatenating heads' outputs and performing projections
+        concat = att.reshape(1, T, C)
+        # print(concat)
+        projected = self.c_proj(concat)
+        # print(projected)
+
+        second_dropout = self.hidden_dropout(projected)
+        # print(second_dropout)
+        # print(attention_mask)
+        self.normalization = nn.LayerNorm(C)
+        y = self.normalization(second_dropout)
+        # print(y)
 
         ##############################################################################
         #                               END OF YOUR CODE                             #
@@ -177,6 +234,11 @@ class GenericTransformer(DummyTransformer):
         #                                                                           #
         # This will take a few lines!                                               #
         ##############################################################################
+
+        ### From Piazza:
+        ## Should compute the layer norm **after each transformer layer** when iterating over them, rather than only after the final layer.
+
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -342,6 +404,12 @@ def prefix_generate(model, prefix, max_new_tokens, temperature=1.0):
     #                                                                            #
     # Note: This should be a one line change from the original generate function #
     ##############################################################################
+
+    ### From Piazza: Pay close attention to the hint for prefix_generate function!
+    ## The starting prefix and starting idx are provided in the boilerplate code.
+    ## We mean "small change" quite literally - it should be at most 2 lines from the generate function if done correctly.
+    ## (There is complementary info in Piazza via image)
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
