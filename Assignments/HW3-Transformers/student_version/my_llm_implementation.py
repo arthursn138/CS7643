@@ -353,9 +353,9 @@ class Encoder(GenericTransformer):
         # print(num_tokens)   # [5, 6]
         for i in range(B):
             # print(num_tokens[i])
-            if max_tokens >= num_tokens[i]:
-                diff = max_tokens - num_tokens[i]
-                attention_mask[i, :, -diff.item()] = 0
+            if max_tokens > num_tokens[i]:
+                diff = (max_tokens - num_tokens[i]).item()
+                attention_mask[i, :, -diff] = 0
 
         # print(attention_mask)
 
@@ -387,6 +387,14 @@ class Decoder(Encoder):
         #                                                                            #
         # This should be a one line function which modifies the full attention_mask  #
         ##############################################################################
+
+        # Call/create attention mask
+        attention_mask = full_attention_mask
+        for i in range(attention_mask.shape[2]):
+            for j in range(attention_mask.shape[3]):
+                if j > i:
+                    attention_mask[:, :, i, j:] = 0
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
