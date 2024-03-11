@@ -355,7 +355,7 @@ class Encoder(GenericTransformer):
             # print(num_tokens[i])
             if max_tokens > num_tokens[i]:
                 diff = (max_tokens - num_tokens[i]).item()
-                attention_mask[i, :, -diff] = 0
+                attention_mask[i, :, -diff:] = 0
 
         # print(attention_mask)
 
@@ -422,6 +422,12 @@ def generate(model, idx, max_new_tokens, temperature=1.0):
     # Temperature Reference:                                                     #
     # https://web.stanford.edu/class/cs224n/slides/cs224n-2023-lecture10-nlg.pdf#page=34 #
     ##############################################################################
+
+    # print(idx)
+    # print(model)
+    ## From huggingface: sample_output = model.generate(max_new_tokens, do_sample=True, top_k=0)
+
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
