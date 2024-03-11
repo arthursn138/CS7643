@@ -121,10 +121,15 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
 
         ## Multihead part: "splitting" matrices into different heads (following https://jalammar.github.io/illustrated-gpt2/#part-2-illustrated-self-attention)
         # print('Number of heads =', self.n_head)
-        k = k.reshape(self.n_head, T, -1)   # H, Dx, Dq (slide notation)
-        q = q.reshape(self.n_head, T, -1)   # H, Dx, Dq (slide notation)
-        v = v.reshape(self.n_head, T, -1)   # H, Dx, Dv (slide notation)
-        # IF IT BREAKS ON OTHER MODULES, TRY USING self.n_embd / self.n_head ON IDX 1, OR -1 ON IDX 1 AND self.n_embd / self.n_head ON IDX 2
+        # print(C / self.n_head)
+        k = k.reshape(B, self.n_head, T, -1)   # B, H, Dx, Dq (slide notation)
+        q = q.reshape(B, self.n_head, T, -1)   # B, H, Dx, Dq (slide notation)
+        v = v.reshape(B, self.n_head, T, -1)   # B, H, Dx, Dv (slide notation)
+
+        # ## Alternative way. This way passes next test, but can't have laryernorm to pass
+        # k = k.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip
+        # q = q.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip
+        # v = v.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip
 
         # # # print('Embedding dim:', C)
         # # # k.reshape(C, C, -1)
@@ -133,35 +138,54 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
         # print('Q:', q.size())   # H, Dx, Dq (slide notation)
         # print('V:', v.size())   # H, Dx, Dv (slide notation)
 
-        similarities = torch.bmm(q, torch.transpose(k, 1, 2)) / torch.sqrt(torch.tensor(k.size()[2])) # Normalized by Dq (slides notation)
-        # print(similarities) # IF DOESN'T WORK, TRY TORCH.BMM<>TORCH.MATMUL
-        # # mask = torch.where(attention_mask == 0, -float('inf'), attention_mask)
-        # # similarities = similarities * mask
+        similarities = torch.matmul(q, torch.transpose(k, 2, 3)) / torch.sqrt(torch.tensor(k.size(3))) # Normalized by Dq (slides notation)
+        # print(similarities) # IF DOESN'T WORK, TRY TORCH.BMM<>TORCH.MATMUL<> @
+        # mask1 = torch.where(attention_mask == 0, -float('inf'), attention_mask)
+        # print('torch.where:', mask1)
+        # mask = attention_mask.masked_fill(attention_mask == 0, float('-inf'))
+        # # print('masked_fill:', mask2)
+        masked_sim = similarities.masked_fill(attention_mask == 0, float('-inf'))
+        # # # print('similarities', similarities)
+        # # # print('masked_sim', masked_sim)
+        # # # print('elementwise multiplication', similarities * mask)
+        # # # # similarities = similarities * mask
 
-        self.softmax = nn.Softmax(dim=2)
-        softmax = self.softmax(similarities)
+        self.softmax = nn.Softmax(dim=3)
+        softmax = self.softmax(masked_sim)
         # print(softmax)
         first_dropout = self.attn_dropout(softmax)
         # print(first_dropout)
 
-        att = torch.bmm(first_dropout, v)
+        att = torch.matmul(first_dropout, v)
         # # # print('Before summing', att)
         # # # print(att.shape)
         # # # summed = torch.sum(att, dim=1)
         # # # print('Checking if summed over the correct dimension', summed)
 
         ## Concatenating heads' outputs and performing projections
-        concat = att.reshape(1, T, C)
-        # print(concat)
+        concat = att.reshape(B, T, C)   # Looks like it is reshaping the way I want
+
+        # # # concat = torch.zeros_like(x)
+        # # # for i in range(self.n_head):
+        # # #     a = att[:, i, :, :]
+        # # #     torch.cat((a, a))
+        # # #     # concat[:, :, i] =
+
+        # concat = att.contiguous().view(B, T, C) # This way passes next test, but can't have laryernorm
+        # concat = att.transpose(1, 2).contiguous().view(B, T, C) # Matches Ghazal's tips. This way passes next test, but can't have laryernorm
+        # # # print(concat)
         projected = self.c_proj(concat)
         # print(projected)
 
-        second_dropout = self.hidden_dropout(projected)
+        y = self.hidden_dropout(projected)
         # print(second_dropout)
         # print(attention_mask)
-        self.normalization = nn.LayerNorm(C)
-        y = self.normalization(second_dropout)
+
+        # self.normalization = nn.LayerNorm(C)
+        # y = self.normalization(y)   #.detach().float()
+
         # print(y)
+        # print(type(y))
 
         ##############################################################################
         #                               END OF YOUR CODE                             #
