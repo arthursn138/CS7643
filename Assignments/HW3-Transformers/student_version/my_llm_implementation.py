@@ -122,14 +122,18 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
         ## Multihead part: "splitting" matrices into different heads (following https://jalammar.github.io/illustrated-gpt2/#part-2-illustrated-self-attention)
         # print('Number of heads =', self.n_head)
         # print(C / self.n_head)
-        k = k.reshape(B, self.n_head, T, -1)   # B, H, Dx, Dq (slide notation)
-        q = q.reshape(B, self.n_head, T, -1)   # B, H, Dx, Dq (slide notation)
-        v = v.reshape(B, self.n_head, T, -1)   # B, H, Dx, Dv (slide notation)
+        # k = k.reshape(B, self.n_head, T, C // self.n_head)   # B, H, Dx, Dq (slide notation)
+        # q = q.reshape(B, self.n_head, T, C // self.n_head)   # B, H, Dx, Dq (slide notation)
+        # v = v.reshape(B, self.n_head, T, C // self.n_head)   # B, H, Dx, Dv (slide notation)
+
+        # print('K:', k.shape)   # D_X, D_Q
+        # print('Q:', q.shape)   # D_X, D_Q
+        # print('V:', v.shape)   # D_X, D_V
 
         # ## Alternative way. This way passes next test, but can't have laryernorm to pass
-        # k = k.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip
-        # q = q.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip
-        # v = v.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip
+        k = k.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip. Ok to use, confirmed in Avinash's OH.
+        q = q.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip. Ok to use, confirmed in Avinash's OH.
+        v = v.view(B, T, self.n_head, int(C / self.n_head)).transpose(1, 2) # Ghazal's tip. Ok to use, confirmed in Avinash's OH.
 
         # # # print('Embedding dim:', C)
         # # # k.reshape(C, C, -1)
@@ -138,7 +142,7 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
         # print('Q:', q.size())   # H, Dx, Dq (slide notation)
         # print('V:', v.size())   # H, Dx, Dv (slide notation)
 
-        similarities = torch.matmul(q, torch.transpose(k, 2, 3)) / torch.sqrt(torch.tensor(k.size(3))) # Normalized by Dq (slides notation)
+        similarities = torch.matmul(q, torch.transpose(k, 2, 3)) / torch.sqrt(torch.tensor(k.shape[3])) # Normalized by Dq (slides notation)
         # print(similarities) # IF DOESN'T WORK, TRY TORCH.BMM<>TORCH.MATMUL<> @
         # mask1 = torch.where(attention_mask == 0, -float('inf'), attention_mask)
         # print('torch.where:', mask1)
@@ -163,7 +167,8 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
         # # # print('Checking if summed over the correct dimension', summed)
 
         ## Concatenating heads' outputs and performing projections
-        concat = att.reshape(B, T, C)   # Looks like it is reshaping the way I want
+        # reshaping = att.transpose(1, 2)
+        # concat = att.reshape(B, T, C)   # Looks like it is reshaping the way I want
 
         # # # concat = torch.zeros_like(x)
         # # # for i in range(self.n_head):
@@ -171,8 +176,8 @@ class GenericSelfAttention(DummyMultiHeadedSelfAttention):
         # # #     torch.cat((a, a))
         # # #     # concat[:, :, i] =
 
-        # concat = att.contiguous().view(B, T, C) # This way passes next test, but can't have laryernorm
-        # concat = att.transpose(1, 2).contiguous().view(B, T, C) # Matches Ghazal's tips. This way passes next test, but can't have laryernorm
+        # # # concat = att.contiguous().view(B, T, C) # This way passes next test, but can't have laryernorm
+        concat = att.transpose(1, 2).contiguous().view(B, T, C) # Matches Ghazal's tips. This way passes next test. Confirmed in Avinash's OH.
         # # # print(concat)
         projected = self.c_proj(concat)
         # print(projected)
