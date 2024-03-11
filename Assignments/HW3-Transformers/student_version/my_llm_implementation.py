@@ -344,6 +344,21 @@ class Encoder(GenericTransformer):
         #                                                                            #
         # This should be a 1-3 line function.                                        #
         ##############################################################################
+
+        # Create attention mask
+        attention_mask = torch.ones((B, max_tokens, max_tokens))
+        # print(max_tokens)
+
+        # Zeros where there is too many tokens
+        # print(num_tokens)   # [5, 6]
+        for i in range(B):
+            # print(num_tokens[i])
+            if max_tokens >= num_tokens[i]:
+                diff = max_tokens - num_tokens[i]
+                attention_mask[i, :, -diff.item()] = 0
+
+        # print(attention_mask)
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
