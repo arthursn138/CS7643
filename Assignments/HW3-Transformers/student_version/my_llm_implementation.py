@@ -423,10 +423,31 @@ def generate(model, idx, max_new_tokens, temperature=1.0):
     # https://web.stanford.edu/class/cs224n/slides/cs224n-2023-lecture10-nlg.pdf#page=34 #
     ##############################################################################
 
-    # print(idx)
-    # print(model)
-    ## From huggingface: sample_output = model.generate(max_new_tokens, do_sample=True, top_k=0)
+    # print(idx.shape)
+    B, T = idx.shape
+    # print(B, T)
+    # print(max_new_tokens) # 6
 
+    ### From Krishanu's OH:
+    ## logits -> temp red -> softmax -> multinomial(?) -> concat -> repeat using only the last array
+    ## model should be a tuple of logits and loss
+    for _ in range(int(max_new_tokens)):
+        sample = model(idx)[0].reshape(B, -1)
+        # print(sample)
+        temp_reduced = sample / temperature
+        # print(temp_reduced)
+        softmax = F.softmax(temp_reduced)
+        # print(softmax)
+        # test = torch.tensor([7,8,9], dtype=torch.float)
+        choice_idx = torch.multinomial(softmax, num_samples=1).item()
+        # print(choice_idx)
+        # print(softmax.shape)
+        # print((softmax[:, choice_idx]).reshape(1,1).shape, 'and', idx.shape)
+        # print(softmax[:, choice_idx].reshape(1,1))
+        idx = torch.cat((idx, softmax[:, choice_idx].reshape(1, 1)), dim=1)
+        # print(idx)
+
+    # print(idx.shape)
 
     ##############################################################################
     #                               END OF YOUR CODE                             #
