@@ -264,9 +264,40 @@ class GenericTransformer(DummyTransformer):
         # This will take a few lines!                                               #
         ##############################################################################
 
+        emb = self.transformer['embedding'](idx) # Embed inputs
+
+        # print(emb.shape) # Shape 1, 5, 4 (B, T, n_emb)
+
+        if hidden_cache is not None:
+          emb = torch.cat((hidden_cache, emb), dim=1)
+          # idx = torch.cat((hidden_cache['tokens'], idx), dim=1)
+
+        # # print(len(attention_mask.shape))
+        # if len(attention_mask.shape) == 3:
+        #   B, T, T2 = attention_mask.shape
+        #   attention_mask = attention_mask.reshape(B, 1, T, T2) # From Piazza, reshaping here is needed (if it doesn't work, change it to 3D in GenericSelfAttention)
+
+        # print(self.transformer['h']) # There already are some Layernorms going on
+        # transf = self.transformer['h'](idx) # Apply each transformer layer sequentially
+
+        x = emb
+        for i in self.transformer['h']: # Apply each transformer layer sequentially
+          # print(i) # There are some layernorms, but not at the end of each transformer block
+          x = i(x, attention_mask)
+          norm = self.transformer['ln_f'](x)
+          x = norm # Ensures normalizations after each block/iteration
+
+        logits = self.lm_head(x)
+
+        # x = torch.tensor(1)
+        # logits = torch.tensor(1)
+
+
         ### From Piazza:
         ## Should compute the layer norm **after each transformer layer** when iterating over them, rather than only after the final layer.
-
+        ## From Manav on Piazza: "Now after the model generates the token, we normalize the logits to get probability values and decide which one to sample."
+        # self.normalization = nn.LayerNorm(C)
+        # y = self.normalization(y) #.detach().float()
 
         ##############################################################################
         #                               END OF YOUR CODE                             #
