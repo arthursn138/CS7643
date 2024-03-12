@@ -53,19 +53,20 @@ class Embedding(DummyEmbedding):
         # emb_p = self.position_embeddings(idx[B])
         # print(emb_v.size())
 
-        emb_p = torch.zeros_like(emb_v)
-        # print('idx', idx.squeeze().tolist())
-        # list_of_indices = idx.squeeze().tolist()
-        # for i in list_of_indices:
-        for i, word_index in enumerate(idx.squeeze()):
-            # print(i, word_index)
-            ii = torch.tensor(i)
-            # print('ii', ii)
-            emb_p[:, i, :] = self.position_embeddings(ii)
-            # print('i=', i, '; emb_p=', emb_p[:, i, :])
+        # # emb_p = torch.zeros_like(emb_v)
+        # # # print('idx', idx.squeeze().tolist())
+        # # # list_of_indices = idx.squeeze().tolist()
+        # # # for i in list_of_indices:
+        # # for i, word_index in enumerate(idx.squeeze()):
+        # #     # print(i, word_index)
+        # #     ii = torch.tensor(i)
+        # #     # print('ii', ii)
+        # #     emb_p[:, i, :] = self.position_embeddings(ii)
+        # #     # print('i=', i, '; emb_p=', emb_p[:, i, :])
 
-        # print(emb_v)
-        # print(emb_p)
+        # # # print(emb_v)
+        # # # print(emb_p)
+        emb_p = self.position_embeddings(torch.arange(T, device=idx.device))[None, :]
 
         embeddings = emb_v + emb_p
         # print(embeddings)
