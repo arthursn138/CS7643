@@ -432,19 +432,19 @@ def generate(model, idx, max_new_tokens, temperature=1.0):
     ## logits -> temp red -> softmax -> multinomial(?) -> concat -> repeat using only the last array
     ## model should be a tuple of logits and loss
     for _ in range(int(max_new_tokens)):
-        sample = model(idx)[0].reshape(B, -1)
+        sample = model(idx)[0][:, -1, :]  #.reshape(B, -1)
         # print(sample)
-        temp_reduced = sample / temperature
+        temp_reduced = sample / temperature # https://web.stanford.edu/class/cs224n/slides/cs224n-2023-lecture10-nlg.pdf#page=34
         # print(temp_reduced)
-        softmax = F.softmax(temp_reduced)
+        softmax = F.softmax(temp_reduced, dim=1)
         # print(softmax)
         # test = torch.tensor([7,8,9], dtype=torch.float)
-        choice_idx = torch.multinomial(softmax, num_samples=1).item()
+        choice_idx = torch.multinomial(softmax, num_samples=1)
         # print(choice_idx)
         # print(softmax.shape)
         # print((softmax[:, choice_idx]).reshape(1,1).shape, 'and', idx.shape)
         # print(softmax[:, choice_idx].reshape(1,1))
-        idx = torch.cat((idx, softmax[:, choice_idx].reshape(1, 1)), dim=1)
+        idx = torch.cat((idx, choice_idx), dim=1)
         # print(idx)
 
     # print(idx.shape)
@@ -492,6 +492,11 @@ class EncoderDecoder(nn.Module):
         #                                                                            #
         # This should be a 1-2 lines.                                                #
         ##############################################################################
+
+        # print(prefix)
+        hidden_cache = self.encoder.forward(prefix, return_hidden=True)
+        logits, loss = self.decoder.forward(idx, targets=targets, hidden_cache=hidden_cache)
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
