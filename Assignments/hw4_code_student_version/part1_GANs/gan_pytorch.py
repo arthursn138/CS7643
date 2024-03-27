@@ -42,7 +42,12 @@ def sample_noise(batch_size, dim, seed=None):
     #                                                                            #
     # HINT: torch.rand?                                                          #
     ##############################################################################
-    return
+    
+    # https://discuss.pytorch.org/t/generating-random-tensors-according-to-the-uniform-distribution-pytorch/53030
+    # Just need to scale
+    rand = 2 * torch.rand((batch_size, dim)) - 1
+    
+    return rand
     ##############################################################################
 
 
@@ -65,6 +70,19 @@ def discriminator(seed=None):
     #                                                                            #
     # HINT: nn.Sequential might be helpful. Flatten() might be helpful.          #
     ##############################################################################
+    
+    # We know images are 32 x 32 = 1024; 3 channels = 3072; and 10 classes
+    # https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html
+    alpha = 0.01
+    model = nn.Sequential(
+        nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),   # 20, 28, 28 (kernel = 5, stride and padding default)
+        nn.LeakyReLU(alpha),
+        nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1), # 1, 24, 24 (kernel = 5, stride and padding default)
+        nn.LeakyReLU(alpha),
+        nn.Flatten(),
+        nn.Linear(128 * 8 * 8, 1)   # 24 * 24 = 576
+        )
+
 
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -92,6 +110,16 @@ def generator(noise_dim=NOISE_DIM, seed=None):
     # HINT: nn.Sequential might be helpful, nn.UnFlatten() may be useful         #
     ##############################################################################
 
+    model = nn.Sequential(
+        nn.Linear(noise_dim, 256 * 8 * 8),
+        nn.ReLU(),
+        nn.Unflatten(1, (256, 8, 8)),
+        nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
+        nn.ReLU(),
+        nn.ConvTranspose2d(128, 3, kernel_size=4, stride=2, padding=1),
+        nn.Tanh()
+        )
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -112,7 +140,29 @@ def bce_loss(input, target):
     ##############################################################################
     # TODO: Implement BCELoss                                                    #
     ##############################################################################
-    return
+    
+    # ## From HW1
+    # pred_probs = []
+    # for i in range(len(y)):
+    #     pred_probs.append(x_pred[i, y[i]])
+    # pred_probs = np.array(pred_probs)
+
+    # loss = -np.sum(np.log(pred_probs)) / len(y)
+
+    # all_zeros = torch.zeros_like(input)
+    # all_ones = torch.ones_like(input)
+    # prob = torch.where(input == target, input, target)
+    # print(prob)
+
+    # stable = 0.00001
+    # p = target * torch.log(target + stable) + (1 - input) * torch.log(1 - target + stable)
+    # loss = -torch.mean(p)
+    
+    loss = torch.where(target == 1, 1 - input, input)
+    loss = -torch.log(loss.clamp(min=1e-5))
+    loss = torch.mean(loss)
+
+    return loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -134,6 +184,15 @@ def discriminator_loss(logits_real, logits_fake):
     # TODO: Implement Disc. Loss                                                 #
     ##############################################################################
 
+    n = logits_real.shape[0]
+    true_labels = torch.ones(n).to(logits_real.device)
+    false_labels = torch.zeros(n).to(logits_fake.device)
+    
+    loss_real = bce_loss(logits_real, true_labels)
+    loss_fake = bce_loss(logits_fake, false_labels)
+    
+    loss = (loss_real + loss_fake) / 2
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -154,6 +213,9 @@ def generator_loss(logits_fake):
     ##############################################################################
     # TODO: Implement Generator Loss                                             #
     ##############################################################################
+
+    all_ones = torch.ones_like(logits_fake)
+    loss = bce_loss(logits_fake, all_ones)
 
     ##############################################################################
     #                               END OF YOUR CODE                             #
