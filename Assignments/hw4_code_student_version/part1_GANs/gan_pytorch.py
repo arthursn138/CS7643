@@ -109,13 +109,15 @@ def generator(noise_dim=NOISE_DIM, seed=None):
     #                                                                            #
     # HINT: nn.Sequential might be helpful, nn.UnFlatten() may be useful         #
     ##############################################################################
+    
+    # https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
 
     model = nn.Sequential(
         nn.Linear(noise_dim, 256 * 8 * 8),
-        nn.ReLU(),
+        nn.ReLU(inplace=True),
         nn.Unflatten(1, (256, 8, 8)),
         nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
-        nn.ReLU(),
+        nn.ReLU(inplace=True),
         nn.ConvTranspose2d(128, 3, kernel_size=4, stride=2, padding=1),
         nn.Tanh()
         )
@@ -142,26 +144,22 @@ def bce_loss(input, target):
     ##############################################################################
     
     # ## From HW1
+    # print('LEN(TARGET)', len(target))
+    # print('TARGET', target)
+    # print('INPUTS', input)
     # pred_probs = []
-    # for i in range(len(y)):
-    #     pred_probs.append(x_pred[i, y[i]])
+    # for idx, value in enumerate(target):
+    #     print('i', idx)
+    #     #pred_probs.append(input[i, target[i]]) # appends a list with that index's value for both targe and input
     # pred_probs = np.array(pred_probs)
 
-    # loss = -np.sum(np.log(pred_probs)) / len(y)
+    # pred_probs = torch.abs(input - target)
 
-    # all_zeros = torch.zeros_like(input)
-    # all_ones = torch.ones_like(input)
-    # prob = torch.where(input == target, input, target)
-    # print(prob)
+    # loss = -np.sum(np.log(pred_probs)) / len(target)
 
-    # stable = 0.00001
-    # p = target * torch.log(target + stable) + (1 - input) * torch.log(1 - target + stable)
-    # loss = -torch.mean(p)
+    bce = nn.BCEWithLogitsLoss()
+    loss = bce(input, target)
     
-    loss = torch.where(target == 1, 1 - input, input)
-    loss = -torch.log(loss.clamp(min=1e-5))
-    loss = torch.mean(loss)
-
     return loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -184,14 +182,15 @@ def discriminator_loss(logits_real, logits_fake):
     # TODO: Implement Disc. Loss                                                 #
     ##############################################################################
 
-    n = logits_real.shape[0]
-    true_labels = torch.ones(n).to(logits_real.device)
-    false_labels = torch.zeros(n).to(logits_fake.device)
+    # print('Shapes: real and fake', logits_real.shape, logits_fake.shape)
+    # # n = logits_real.shape[0]
+    true_labels = torch.ones(logits_real.shape).to(logits_real.device)
+    false_labels = torch.zeros(logits_real.shape).to(logits_fake.device)
     
     loss_real = bce_loss(logits_real, true_labels)
     loss_fake = bce_loss(logits_fake, false_labels)
     
-    loss = (loss_real + loss_fake) / 2
+    loss = loss_real + loss_fake
 
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -239,6 +238,8 @@ def get_optimizer(model):
     # TODO: Optimizer                                                            #
     ##############################################################################
     
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.5, 0.999))
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -285,6 +286,43 @@ def train_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, load
             # HINT: Use the variables above that are set to None                         #
             # HINT: Use D_solver and G_solver                                            #
             ##############################################################################
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # Borrowed from below to ensure device compatibility
+            G.to(device)
+            D.to(device)
+
+            # Prints for sanity check:
+            # print(G)
+            # print(D)
+            # print('real_data:', real_data.shape, '||logits_real:', logits_real.shape)
+            # real_data: torch.Size([256, 3, 32, 32]) ||logits_real: torch.Size([256, 1])
+
+            # Step 1
+            noise = sample_noise(batch_size=batch_size, dim=noise_size)
+
+            # Step 2:
+            fake_images = G(noise.to(device))
+            d_output_fake = D(fake_images.to(device))
+            # print('fake_images:', fake_images.shape, '||d_output_fake:', d_output_fake.shape)
+            # fake_images: torch.Size([256, 3, 32, 32]) ||d_output_fake: torch.Size([256, 1])
+
+            # d_output_real = D(logits_real.to(device))
+
+            d_total_error = discriminator_loss(logits_real, d_output_fake)
+
+            # Step 3:
+            d_total_error.backward(retain_graph=True)
+            D_solver.step()
+
+            # Step 4:
+            g_error = generator_loss(fake_images) # Works with fake_images, but not with d_output_fake
+            # g_error = generator_loss(d_output_fake)
+            
+            # Step 5:
+            G_solver.zero_grad()
+            g_error.backward()
+            G_solver.step()
+            
 
             ##############################################################################
             #                               END OF YOUR CODE                             #
