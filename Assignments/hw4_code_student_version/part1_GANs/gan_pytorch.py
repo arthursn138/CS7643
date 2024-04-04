@@ -73,12 +73,16 @@ def discriminator(seed=None):
     
     # We know images are 32 x 32 = 1024; 3 channels = 3072; and 10 classes
     # https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html
+    # https://arxiv.org/pdf/1511.06434.pdf
+
     alpha = 0.01
     model = nn.Sequential(
         nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),   # 20, 28, 28 (kernel = 5, stride and padding default)
-        nn.LeakyReLU(alpha),
+        # nn.BatchNorm2d(64),
+        nn.LeakyReLU(alpha, inplace=True),
         nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1), # 1, 24, 24 (kernel = 5, stride and padding default)
-        nn.LeakyReLU(alpha),
+        # nn.BatchNorm2d(128),
+        nn.LeakyReLU(alpha, inplace=True),
         nn.Flatten(),
         nn.Linear(128 * 8 * 8, 1)   # 24 * 24 = 576
         )
@@ -110,15 +114,20 @@ def generator(noise_dim=NOISE_DIM, seed=None):
     # HINT: nn.Sequential might be helpful, nn.UnFlatten() may be useful         #
     ##############################################################################
     
+    # https://arxiv.org/pdf/1511.06434.pdf
     # https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
 
     model = nn.Sequential(
-        nn.Linear(noise_dim, 256 * 8 * 8),
+        nn.Linear(noise_dim, 256 * 8 * 8), # 1024 * 8 * 8
         nn.ReLU(inplace=True),
+        # nn.Linear(1024 * 8 * 8, 256 * 8 * 8),
+        # nn.ReLU(inplace=True),
         nn.Unflatten(1, (256, 8, 8)),
         nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
+        # nn.BatchNorm2d(128),
         nn.ReLU(inplace=True),
         nn.ConvTranspose2d(128, 3, kernel_size=4, stride=2, padding=1),
+        # nn.BatchNorm2d(3),
         nn.Tanh()
         )
 
@@ -296,32 +305,37 @@ def train_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, load
             # print(D)
             # print('real_data:', real_data.shape, '||logits_real:', logits_real.shape)
             # real_data: torch.Size([256, 3, 32, 32]) ||logits_real: torch.Size([256, 1])
+            # print('batch size:', batch_size) # Batches of 256
+            # print('iter_count', iter_count, 'x.shape:', x.shape) #, 'dataloader shape:', loader_train.shape)
 
             # Step 1
             noise = sample_noise(batch_size=batch_size, dim=noise_size)
 
             # Step 2:
-            fake_images = G(noise.to(device))
-            d_output_fake = D(fake_images.to(device))
+            fake_images = G(noise.to(device)).detach()  # Just generate fake images with the current generator (NEEDS detaching)
+            d_output_fake = D(fake_images.to(device))   # Pass the fake images through the current discriminator (CAN'T be detached)
+
             # print('fake_images:', fake_images.shape, '||d_output_fake:', d_output_fake.shape)
             # fake_images: torch.Size([256, 3, 32, 32]) ||d_output_fake: torch.Size([256, 1])
 
-            # d_output_real = D(logits_real.to(device))
-
-            d_total_error = discriminator_loss(logits_real, d_output_fake)
+            d_total_error = discriminator_loss(logits_real, d_output_fake)  # Evaluate discriminator
 
             # Step 3:
-            d_total_error.backward(retain_graph=True)
-            D_solver.step()
+            d_total_error.backward() # retain_graph=True might not be needed
+            D_solver.step() # Backprop Discriminator
 
             # Step 4:
-            g_error = generator_loss(fake_images) # Works with fake_images, but not with d_output_fake
-            # g_error = generator_loss(d_output_fake)
+            G_solver.zero_grad()
+
+            fake_images = G(noise.to(device))           # This new fwd pass is to get gradients (above we detach it)
+            d_output_fake = D(fake_images.to(device))   # This new fwd pass is to get gradients -- note this uses the updated discriminator
+
+            g_error = generator_loss(d_output_fake)     # Evaluates the generator
             
             # Step 5:
-            G_solver.zero_grad()
+            # G_solver.zero_grad()
             g_error.backward()
-            G_solver.step()
+            G_solver.step() # Backprop Generator
             
 
             ##############################################################################
