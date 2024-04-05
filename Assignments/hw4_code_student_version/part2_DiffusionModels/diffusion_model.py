@@ -145,6 +145,8 @@ class DiffusionModel:
         # Hint: only a couple lines, 1 call to DL_random                      #
         #######################################################################
 
+        
+
         #######################################################################
         #                             END OF YOUR CODE                        #
         #######################################################################
@@ -155,6 +157,28 @@ class DiffusionModel:
         # TODO: Implement loss comptutation    #
         # Hint: 2 calls to DL_random           #
         ########################################
+
+        # print('cond:', cond.shape, '; data:', data.shape)
+        
+        batch_size = cond.shape[0]
+        # x0 = DL_random(shape=(batch_size, 1), seed=seed)
+        # timesteps = []
+        # for i in range(batch_size):
+        #     t = DL_random()
+        
+        t = DL_random(shape=(batch_size,), int_range=[0, self.denoising_steps], normal=False, seed=seed)
+        epsilon = DL_random(shape=data.shape, seed=seed)
+
+        noisy_data = self.noise_scheduler.add_noise(data, epsilon, t) # x_t
+        # print('noisy_data:', noisy_data.shape)
+
+        # # loss = (torch.norm(noise_GT - noisy_data))^2
+
+        ## From the notebook: use noise_pred_net(sample = x, timestep = t, global_cond = c) to generate an output from the noise prediction network (alternatively you can just call noise_pred_net(x, t, c))
+        ep_theta = self.noise_pred_net(noisy_data.to(self.device), t.to(self.device), cond.to(self.device))
+
+        loss = torch.nn.functional.mse_loss(epsilon.to(self.device), ep_theta.to(self.device))
+        
 
         ########################################
         #             END OF YOUR CODE         #

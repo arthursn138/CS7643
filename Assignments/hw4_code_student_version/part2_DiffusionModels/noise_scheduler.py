@@ -135,7 +135,7 @@ class NoiseScheduler:
         # print(new_size)
         reshaped_alpha_bars = self.alpha_bars[timesteps].reshape(new_size)
         # print(reshaped_alpha_bars.shape)
-        noisy_samples = torch.sqrt(1 - reshaped_alpha_bars) * noise + torch.sqrt(reshaped_alpha_bars) * original_samples
+        noisy_samples = torch.sqrt(1 - reshaped_alpha_bars) * noise.to(self.device) + torch.sqrt(reshaped_alpha_bars) * original_samples.to(self.device)
 
 
         ##########################################
