@@ -127,7 +127,14 @@ class NoiseScheduler:
         # print(self.alpha_bars)
         # print(self.alpha_bars[timesteps].shape, ';', self.alpha_bars[timesteps].reshape(-1, 1).shape)
 
-        reshaped_alpha_bars = self.alpha_bars[timesteps].reshape(-1, 1)
+        # reshaped_alpha_bars = self.alpha_bars[timesteps].reshape(-1, 1) # ---> doesn't pass GS
+        # print(reshaped_alpha_bars.shape)
+        s = original_samples.shape
+        # print(s, len(s))
+        new_size = (-1,) + tuple((len(s) - 1) * [1])
+        # print(new_size)
+        reshaped_alpha_bars = self.alpha_bars[timesteps].reshape(new_size)
+        # print(reshaped_alpha_bars.shape)
         noisy_samples = torch.sqrt(1 - reshaped_alpha_bars) * noise + torch.sqrt(reshaped_alpha_bars) * original_samples
 
 
