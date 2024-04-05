@@ -18,8 +18,13 @@ class NoiseScheduler:
         ###########################################################
         # TODO: Compute alphas and alpha_bars (refer to DDPM paper)
         ###########################################################
-        self.alphas = None
-        self.alpha_bars = None
+        self.alphas = 1 - self.betas
+        # self.alpha_bars = np.ones_like(self.alphas)
+        # for i in range(len(self.alphas)):
+        #     self.alpha_bars[i] = np.prod(self.alphas[:i+1])
+
+        self.alpha_bars = np.cumprod(self.alphas) # tip on piazza to replace for loop
+        
         ###########################################################
         #                     END OF YOUR CODE                    #
         ###########################################################
@@ -51,6 +56,24 @@ class NoiseScheduler:
             # TODO: Implement a denoising step  #
             # Hint: 1 call to DL_random         #    
             #####################################
+
+            ## Following Algorithm 2 - Sampling (we need eqn 4). Assumming t is always just one scalar.
+            # print('t:', t, 'x_t', x_t.shape)    # x_t is NOT previous timestep, as the docstring says. Instead it is the noisy data at time t.
+
+            if t > 1:
+                z = DL_random(x_t.shape, normal=True, seed=seed) #,[0 1] (eqn 3 algorithm 2)
+            else:
+                z = torch.zeros_like(x_t)
+
+            scalar = 1 / torch.sqrt(self.alphas[t])
+            noise_coeff = (1 - self.alphas[t]) / torch.sqrt(1 - self.alpha_bars[t])
+            sigma = torch.sqrt(self.betas[t])
+            # sigma = torch.sqrt( ( (1 - self.alpha_bars[t-1]) / (1 - self.alpha_bars[t]) ) * self.betas[t] )
+
+            print()
+            
+            x_t_prev = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device)) + sigma * z.to(self.device)
+
             pass
             #####################################
             #          END OF YOUR CODE         #
@@ -85,6 +108,28 @@ class NoiseScheduler:
         ###########################################
         # TODO: Implement forward noising process #
         ###########################################
+
+        # print(noise.shape, original_samples.shape)
+        # print(timesteps.tolist())
+        
+        ## Following Algorithm 1 - Training, we need the coeff. that multiplies epsilon_theta
+
+        noisy_samples = torch.ones_like(noise)
+        # for t, i in enumerate(timesteps):
+        #     # noisy_samples[t] = torch.prod(noise[:t]) + original_samples[:t]
+        #     # noisy_samples[t] = self.betas[i] * noise[t] + self.alphas[i] * original_samples[t]
+        #     noisy_samples[t] = torch.sqrt(1 - self.alpha_bars[i]) * noise[t] + torch.sqrt(self.alpha_bars[i]) * original_samples[t]
+        #     # print(t, i)
+        #     # print(noise[:t])
+        
+        # ## Broadcasting
+        # print(self.betas.shape, self.alpha_bars.shape)
+        # print(self.alpha_bars)
+        # print(self.alpha_bars[timesteps].shape, ';', self.alpha_bars[timesteps].reshape(-1, 1).shape)
+
+        reshaped_alpha_bars = self.alpha_bars[timesteps].reshape(-1, 1)
+        noisy_samples = torch.sqrt(1 - reshaped_alpha_bars) * noise + torch.sqrt(reshaped_alpha_bars) * original_samples
+
 
         ##########################################
         #          END OF YOUR CODE              #
