@@ -216,7 +216,7 @@ class DiffusionModel:
             t = torch.tensor(tlist).to(self.device) # (Algo 2, eqn 2 from DDPM paper)
             # print(t)
 
-            print(threshold, guidance_weight)
+            # print(threshold, guidance_weight)
 
             # # x_t = DL_random(shape=data.shape, seed=seed)
             # x_t = DL_random(shape=sample.shape, seed=seed).to(self.device)  # (Algo 2, eqn 1) -- issues with that shape

@@ -7,3 +7,6 @@
 /Assignments/HW2-Coding/student_version/part2-pytorch/data/cifar*
 
 *.mat
+
+/Assignments/hw4_code_student_version/part2_DiffusionModelscifar-10-batches-py
+*/__pychache__
