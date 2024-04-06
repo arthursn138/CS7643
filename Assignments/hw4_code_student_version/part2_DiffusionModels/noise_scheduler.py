@@ -60,7 +60,7 @@ class NoiseScheduler:
             ## Following Algorithm 2 - Sampling (we need eqn 4). Assumming t is always just one scalar.
             # print('t:', t, 'x_t', x_t.shape)    # x_t is NOT previous timestep, as the docstring says. Instead it is the noisy data at time t.
 
-            if t > 1:
+            if t > 0:
                 z = DL_random(x_t.shape, normal=True, seed=seed) #,[0 1] (eqn 3 algorithm 2)
             else:
                 z = torch.zeros_like(x_t)
@@ -70,7 +70,7 @@ class NoiseScheduler:
             sigma = torch.sqrt(self.betas[t])
             # sigma = torch.sqrt( ( (1 - self.alpha_bars[t-1]) / (1 - self.alpha_bars[t]) ) * self.betas[t] )
 
-            print()
+            # print()
             
             x_t_prev = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device)) + sigma * z.to(self.device)
 
@@ -86,6 +86,22 @@ class NoiseScheduler:
             #              the mean of the x_t_prev              #
             #       Hint: 1 call to DL_random                    #
             ######################################################
+
+            # if t > 1:
+            #     z = DL_random(x_t.shape, normal=True, seed=seed) #,[0 1] (eqn 3 algorithm 2)
+            # else:
+            #     z = torch.zeros_like(x_t)
+            #     alpha_bar_prev = 1
+
+            # scalar = 1 / torch.sqrt(self.alphas[t])
+            # noise_coeff = (1 - self.alphas[t]) / torch.sqrt(1 - self.alpha_bars[t])
+            # sigma = torch.sqrt(self.betas[t])
+            # # sigma = torch.sqrt( ( (1 - self.alpha_bars[t-1]) / (1 - self.alpha_bars[t]) ) * self.betas[t] )
+
+            # # print()
+            
+            # x_t_prev = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device)) + sigma * z.to(self.device)
+            
             pass
             ######################################################
             #                  END OF YOUR CODE                  #

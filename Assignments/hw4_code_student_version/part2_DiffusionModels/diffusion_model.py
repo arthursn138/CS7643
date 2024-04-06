@@ -145,7 +145,8 @@ class DiffusionModel:
         # Hint: only a couple lines, 1 call to DL_random                      #
         #######################################################################
 
-        
+        if DL_random(shape=(1,), normal=False, seed=seed).item() < self.p_uncond:
+            cond = torch.zeros_like(cond)  # Set conditioning to zeros for unconditional training
 
         #######################################################################
         #                             END OF YOUR CODE                        #
@@ -178,7 +179,7 @@ class DiffusionModel:
         ep_theta = self.noise_pred_net(noisy_data.to(self.device), t.to(self.device), cond.to(self.device))
 
         loss = torch.nn.functional.mse_loss(epsilon.to(self.device), ep_theta.to(self.device))
-        
+
 
         ########################################
         #             END OF YOUR CODE         #
@@ -206,6 +207,51 @@ class DiffusionModel:
             # Hint: 1 call to DL_random                                                       #
             # Hint: Use noise_pred_net defined above, not self.noise_pred_net                 #
             ###################################################################################
+
+            batch_size = cond.shape[0]
+            # t = DL_random(shape=(batch_size,), int_range=[0, self.denoising_steps], normal=False, seed=seed)
+            # print(self.denoising_steps)
+            # t = torch.arange(self.denoising_steps)[::-1].long().to(self.device)
+            tlist = list(range(self.denoising_steps))[::-1]
+            t = torch.tensor(tlist).to(self.device) # (Algo 2, eqn 2 from DDPM paper)
+            # print(t)
+
+            print(threshold, guidance_weight)
+
+            # # x_t = DL_random(shape=data.shape, seed=seed)
+            # x_t = DL_random(shape=sample.shape, seed=seed).to(self.device)  # (Algo 2, eqn 1) -- issues with that shape
+            x_t = DL_random(shape=(batch_size, *self.input_shape), seed=seed).to(self.device)  # (Algo 2, eqn 1)
+            
+            null_tokens = torch.zeros_like(cond).to(self.device)  # initialize noise epsilon with zeros (classifier-free guidance)
+
+            for i in t:   # (Also algo 2, eqn 2 from DDPM paper)
+                
+                # # if not cfg:
+                    # model_prediction = noise_pred_net(x_t.to(self.device), t.to(self.device), cond.to(self.device))
+                # noise_epsilon[i] = noise_pred_net(x_t[i], t[i], cond[i].to(self.device))
+                # print('x_t.shape', x_t.shape)
+                # print('t.shape', t.shape)
+                # print('t.shape', t.view(-1, 1, 1).shape)
+                # print('i', i) #, 'i.shape', torch.shape(torch.view(i,(-1, 1, 1))))
+                # print(type(i), 'shape', hasattr(i, 'shape'), 'view', hasattr(i, 'view'))
+                # print('cond.shape', cond.shape)
+                # i = torch.tensor(i).to(self.device)
+                # print('i', i, 'i.shape', torch.shape(torch.view(i,(-1, 1, 1))))
+                
+                noise_epsilon = noise_pred_net(x_t, i, cond.to(self.device))
+
+                ## CFG part (eqn 6 from CFG paper)
+                # if guidance_weight > 0: # Whether using CFG or not
+                noise_epsilon_null_token = noise_pred_net(x_t, i, null_tokens)
+                noise_epsilon_cfg = (1 + guidance_weight) * noise_epsilon - (guidance_weight * noise_epsilon_null_token)
+
+                # total_noise = noise_epsilon + noise_epsilon_cfg
+                # x_t_prev = self.noise_scheduler.denoise_step(self, model_prediction, t, x_t, threshold = False, seed = None)
+                x_t = self.noise_scheduler.denoise_step(noise_epsilon_cfg, i, x_t, threshold=threshold, seed=seed)    # (Al the rest of algo 2 from DDPM paper)
+
+            sample = torch.clone(x_t)
+
+            
             pass
             ####################################################################################
             #                                 END OF YOUR CODE                                 #
