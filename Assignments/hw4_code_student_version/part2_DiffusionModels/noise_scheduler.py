@@ -51,7 +51,7 @@ class NoiseScheduler:
         """
 
         x_t_prev = None
-        if not threshold:
+        if not threshold:   ## Here we can rely on the simplified equation inline between eqns (11) and (12)
             #####################################
             # TODO: Implement a denoising step  #
             # Hint: 1 call to DL_random         #    
@@ -87,20 +87,52 @@ class NoiseScheduler:
             #       Hint: 1 call to DL_random                    #
             ######################################################
 
-            # if t > 1:
-            #     z = DL_random(x_t.shape, normal=True, seed=seed) #,[0 1] (eqn 3 algorithm 2)
-            # else:
-            #     z = torch.zeros_like(x_t)
-            #     alpha_bar_prev = 1
+            ## Now we need to use eqns (7) and (11) for mu
 
-            # scalar = 1 / torch.sqrt(self.alphas[t])
-            # noise_coeff = (1 - self.alphas[t]) / torch.sqrt(1 - self.alpha_bars[t])
-            # sigma = torch.sqrt(self.betas[t])
-            # # sigma = torch.sqrt( ( (1 - self.alpha_bars[t-1]) / (1 - self.alpha_bars[t]) ) * self.betas[t] )
+            if t > 0:
+                z = DL_random(x_t.shape, normal=True, seed=seed) #,[0 1] (eqn 3 algorithm 2)
+                alpha_bar_prev = self.alpha_bars[t-1]
+                
 
-            # # print()
+                # scalar = 1 / torch.sqrt(self.alphas[t])
+                # sigma = torch.sqrt(self.betas[t])   # sigma^2 = beta
+                # # sigma = torch.sqrt( ( (1 - self.alpha_bars[t-1]) / (1 - self.alpha_bars[t]) ) * self.betas[t] )   # sigma^2 = beta tilde
+                # noise_coeff = (1 - self.alphas[t]) / torch.sqrt(1 - self.alpha_bars[t])
+                
+                # x_t_prev = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device)) + sigma * z.to(self.device)
+
+            else:
+                z = torch.zeros_like(x_t)
+                # # noise_coeff = (1 - self.alphas[t]) / torch.sqrt(1 - self.alpha_bars[t]) ### That would divide by 0!!!
+                alpha_bar_prev = 1
+
+            scalar = 1 / torch.sqrt(self.alpha_bars[t])
+            noise_coeff = torch.sqrt(1 - self.alpha_bars[t])
+
+            sigma = torch.sqrt(self.betas[t])
+
+            x_temp = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device))
+
+            ## Max-min part:
+            max_bound = torch.tensor(-1).to(self.device)
+            min_bound = -max_bound
+            x_max_min = torch.max(torch.min(x_temp, min_bound), max_bound)
+
+            mu_coeff_cond = (torch.sqrt(alpha_bar_prev) * self.betas[t]) / (1 - self.alpha_bars[t]) # Eqn(7)
+            mu_coeff_xt = (torch.sqrt(self.alphas[t]) * (1 - alpha_bar_prev)) / (1 - self.alpha_bars[t]) # Eqn(7)
+
+            mu_tilde = mu_coeff_cond * x_max_min + mu_coeff_xt * x_t    # Eqn(7)
+
+            if t!= 0:
+                x_t_prev = mu_tilde + sigma * z.to(self.device)
+
+            else:
+                # Final max-min
+                x_t_prev = torch.max(torch.min(mu_tilde, min_bound), max_bound)
+
+            # # # print()
             
-            # x_t_prev = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device)) + sigma * z.to(self.device)
+            # # x_t_prev = scalar * (x_t.to(self.device) - noise_coeff * model_prediction.to(self.device)) + sigma * z.to(self.device)
             
             pass
             ######################################################
