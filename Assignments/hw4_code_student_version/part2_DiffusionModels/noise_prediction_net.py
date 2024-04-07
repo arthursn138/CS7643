@@ -610,6 +610,7 @@ class ConditionalUnet2D(UNet):
     def __init__(self, input_dim = 64, c_in=3, c_out=3, global_cond_dim=None, **kwargs):
         super().__init__(input_dim, c_in, c_out, **kwargs)
         time_dim = self.time_dim
+        # # print('global_cond_dim', global_cond_dim)
         if global_cond_dim is not None:
             self.label_emb = nn.Embedding(global_cond_dim, time_dim)
 

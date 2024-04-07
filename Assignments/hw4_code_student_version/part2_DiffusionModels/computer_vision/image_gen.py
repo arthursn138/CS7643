@@ -18,8 +18,8 @@ class ImageGenerator:
         #             How might CFG effect this?            #
         #                                                   #
         #####################################################
-        self.input_shape = None
-        self.condition_dim = None
+        self.input_shape = torch.Size([3, 32, 32])
+        self.condition_dim = (3)
         #####################################################
         #                   END OF YOUR CODE                #
         #####################################################

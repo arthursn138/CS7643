@@ -211,6 +211,7 @@ class DiffusionModel:
             batch_size = cond.shape[0]
             # t = DL_random(shape=(batch_size,), int_range=[0, self.denoising_steps], normal=False, seed=seed)
             # print(self.denoising_steps)
+            # print(cond.shape, type(cond.shape))
             # t = torch.arange(self.denoising_steps)[::-1].long().to(self.device)
             tlist = list(range(self.denoising_steps))[::-1]
             t = torch.tensor(tlist).to(self.device) # (Algo 2, eqn 2 from DDPM paper)
